@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Advanced Liquidation Price Calculator</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            width: 90%;
+            max-width: 1200px;
+            background-color: #ffffff;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            height: 90vh;
+        }
+        .form-container {
+            flex: 1;
+            padding: 20px;
+            background-color: #fafafa;
+            border-right: 1px solid #eee;
+            overflow-y: auto;
+        }
+        .result-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            color: #555;
+        }
+        input[type="number"], select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            color: #333;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .reset-button {
+            background-color: #888;
+        }
+        .reset-button:hover {
+            background-color: #666;
+        }
+        .result p {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: #333;
+        }
+        .buy-entry {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            background-color: #fff;
+            position: relative;
+        }
+        .remove-buy {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            width: 30%;
+            margin-top: 10px;
+        }
+        .remove-buy:hover {
+            background-color: #c0392b;
+        }
+        canvas {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h1>Advanced Liquidation Price Calculator</h1>
+            <form id="calculatorForm">
+                <label for="leverage">Leverage:</label>
+                <input type="number" id="leverage" name="leverage" step="1" min="1" required>
+
+                <label for="contractType">Contract Type:</label>
+                <select id="contractType" name="contractType" required>
+                    <option value="long">Long</option>
+                    <option value="short">Short</option>
+                </select>
+
+                <label for="crossIsolated">Cross or Isolated Margin:</label>
+                <select id="crossIsolated" name="crossIsolated" required>
+                    <option value="cross">Cross</option>
+                    <option value="isolated">Isolated</option>
+                </select>
+
+                <div id="walletBalanceDiv">
+                    <label for="walletBalance">Remaining Wallet Balance (in USDT) for Cross Margin:</label>
+                    <input type="number" id="walletBalance" name="walletBalance" step="0.01">
+                </div>
+
+                <div id="buysContainer">
+                    <div class="buy-entry" id="buyEntry1">
+                        <label for="entryPrice1">Entry Price (in USDT):</label>
+                        <input type="number" id="entryPrice1" name="entryPrice1" step="0.01" required>
+
+                        <label for="positionCost1">Position Cost (in USDT):</label>
+                        <input type="number" id="positionCost1" name="positionCost1" step="0.01" required>
+                    </div>
+                </div>
+
+                <button type="button" onclick="addBuyEntry()">Add Another Buy</button>
+                <button type="button" onclick="calculateLiquidationPrice()">Calculate</button>
+                <button type="button" class="reset-button" onclick="resetForm()">Reset</button>
+            </form>
+        </div>
+        <div class="result-container">
+            <label for="exitPrice">Exit Price (in USDT):</label>
+            <input type="number" id="exitPrice" name="exitPrice" step="0.01">
+
+            <div id="result" class="result"></div>
+            <canvas id="chart"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let buyCount = 1;
+
+        document.getElementById('crossIsolated').addEventListener('change', function() {
+            const walletBalanceDiv = document.getElementById('walletBalanceDiv');
+            if (this.value === 'cross') {
+                walletBalanceDiv.style.display = 'block';
+            } else {
+                walletBalanceDiv.style.display = 'none';
+            }
+        });
+
+        function addBuyEntry() {
+            buyCount++;
+            const buysContainer = document.getElementById('buysContainer');
+            const newBuyEntry = document.createElement('div');
+            newBuyEntry.className = 'buy-entry';
+            newBuyEntry.id = `buyEntry${buyCount}`;
+            newBuyEntry.innerHTML = `
+                <label for="entryPrice${buyCount}">Entry Price (in USDT):</label>
+                <input type="number" id="entryPrice${buyCount}" name="entryPrice${buyCount}" step="0.01" required>
+
+                <label for="positionCost${buyCount}">Position Cost (in USDT):</label>
+                <input type="number" id="positionCost${buyCount}" name="positionCost${buyCount}" step="0.01" required>
+                <button type="button" class="remove-buy" onclick="removeBuyEntry(${buyCount})">Remove Buy</button>
+            `;
+            buysContainer.appendChild(newBuyEntry);
+            buysContainer.lastElementChild.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function removeBuyEntry(id) {
+            const buyEntry = document.getElementById(`buyEntry${id}`);
+            buyEntry.remove();
+        }
+
+        function resetForm() {
+            document.getElementById('calculatorForm').reset();
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('chart').style.display = 'none';
+            buyCount = 1;
+            document.getElementById('buysContainer').innerHTML = `
+                <div class="buy-entry" id="buyEntry1">
+                    <label for="entryPrice1">Entry Price (in USDT):</label>
+                    <input type="number" id="entryPrice1" name="entryPrice1" step="0.01" required>
+
+                    <label for="positionCost1">Position Cost (in USDT):</label>
+                    <input type="number" id="positionCost1" name="positionCost1" step="0.01" required>
+                </div>
+            `;
+        }
+
+        function formatCurrency(value) {
+            return `$${value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+        }
+
+        function calculateLiquidationPrice() {
+            const leverage = parseFloat(document.getElementById('leverage').value);
+            const contractType = document.getElementById('contractType').value;
+            const crossIsolated = document.getElementById('crossIsolated').value;
+            const walletBalance = crossIsolated === 'cross' ? parseFloat(document.getElementById('walletBalance').value) || 0 : 0;
+            const exitPrice = parseFloat(document.getElementById('exitPrice').value);
+
+            const maintenanceMarginRate = 0.004; // 0.40%
+            let totalPositionCost = 0;
+            let totalWeightedEntryPrice = 0;
+            let totalPositionSize = 0;
+            let buyPrices = [];
+
+            const buyEntries = document.querySelectorAll('.buy-entry');
+            buyEntries.forEach((entry, index) => {
+                const entryPrice = parseFloat(entry.querySelector(`[id^="entryPrice"]`).value);
+                const positionCost = parseFloat(entry.querySelector(`[id^="positionCost"]`).value);
+                totalPositionCost += positionCost;
+                totalWeightedEntryPrice += entryPrice * positionCost;
+                totalPositionSize += positionCost * leverage;
+                buyPrices.push(entryPrice);
+            });
+
+            const averageEntryPrice = totalWeightedEntryPrice / totalPositionCost;
+            let liquidationPrice, liquidationPercent;
+
+            if (crossIsolated === 'cross') {
+                const totalCollateral = totalPositionCost + walletBalance;
+                if (contractType === 'long') {
+                    liquidationPrice = averageEntryPrice * (1 - (1 / leverage) * (totalCollateral / totalPositionCost) + maintenanceMarginRate);
+                } else {
+                    liquidationPrice = averageEntryPrice * (1 + (1 / leverage) * (totalCollateral / totalPositionCost) - maintenanceMarginRate);
+                }
+            } else {
+                if (contractType === 'long') {
+                    liquidationPrice = averageEntryPrice * (1 - (1 / leverage) + maintenanceMarginRate);
+                } else {
+                    liquidationPrice = averageEntryPrice * (1 + (1 / leverage) - maintenanceMarginRate);
+                }
+            }
+
+            let profit = 0;
+            let gainPercent = 0;
+            if (!isNaN(exitPrice)) {
+                if (contractType === 'long') {
+                    profit = (exitPrice - averageEntryPrice) * totalPositionCost * leverage / averageEntryPrice;
+                    gainPercent = ((exitPrice - averageEntryPrice) / averageEntryPrice) * 100;
+                } else {
+                    profit = (averageEntryPrice - exitPrice) * totalPositionCost * leverage / averageEntryPrice;
+                    gainPercent = ((averageEntryPrice - exitPrice) / averageEntryPrice) * 100;
+                }
+            }
+
+            if (liquidationPrice < 0) {
+                document.getElementById('result').innerHTML = `
+                    <p>Average Entry Price: ${formatCurrency(averageEntryPrice)}</p>
+                    <p>Position Size: ${formatCurrency(totalPositionSize)}</p>
+                    <p>Liquidation Price: Never Bust</p>
+                    <p>Profit: ${formatCurrency(profit)}</p>
+                    <p>Gain Percentage: ${gainPercent.toFixed(2)}%</p>
+                `;
+            } else {
+                if (contractType === 'long') {
+                    liquidationPercent = ((averageEntryPrice - liquidationPrice) / averageEntryPrice) * 100;
+                } else {
+                    liquidationPercent = ((liquidationPrice - averageEntryPrice) / averageEntryPrice) * 100;
+                }
+
+                document.getElementById('result').innerHTML = `
+                    <p>Average Entry Price: ${formatCurrency(averageEntryPrice)}</p>
+                    <p>Position Size: ${formatCurrency(totalPositionSize)}</p>
+                    <p>Liquidation Price: ${formatCurrency(liquidationPrice)}</p>
+                    <p>Liquidation Percent: ${liquidationPercent.toFixed(2)}%</p>
+                    <p>Profit: ${formatCurrency(profit)}</p>
+                    <p>Gain Percentage: ${gainPercent.toFixed(2)}%</p>
+                `;
+            }
+
+            // Update the chart
+            updateChart(buyPrices, exitPrice);
+        }
+
+        function updateChart(buyPrices, exitPrice) {
+            const ctx = document.getElementById('chart').getContext('2d');
+            document.getElementById('chart').style.display = 'block';
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [...buyPrices.map((_, index) => `Buy ${index + 1}`), 'Sell'],
+                    datasets: [{
+                        label: 'Price (in USDT)',
+                        data: [...buyPrices, exitPrice],
+                        backgroundColor: [...buyPrices.map(() => 'rgba(54, 162, 235, 0.2)'), 'rgba(255, 99, 132, 0.2)'],
+                        borderColor: [...buyPrices.map(() => 'rgba(54, 162, 235, 1)'), 'rgba(255, 99, 132, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
