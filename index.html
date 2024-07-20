@@ -148,18 +148,26 @@
             </form>
         </div>
         <div class="result-container">
-            <label for="exitPrice">Exit Price (in USDT):</label>
-            <input type="number" id="exitPrice" name="exitPrice" step="0.01">
+            <label for="exitPrice1">Exit Price Scenario 1 (in USDT):</label>
+            <input type="number" id="exitPrice1" name="exitPrice1" step="0.01">
+
+            <label for="exitPrice2">Exit Price Scenario 2 (in USDT):</label>
+            <input type="number" id="exitPrice2" name="exitPrice2" step="0.01">
+
+            <label for="exitPrice3">Exit Price Scenario 3 (in USDT):</label>
+            <input type="number" id="exitPrice3" name="exitPrice3" step="0.01">
 
             <div id="result" class="result"></div>
-            <canvas id="chart"></canvas>
+            <canvas id="chart1"></canvas>
+            <canvas id="chart2"></canvas>
+            <canvas id="chart3"></canvas>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         let buyCount = 1;
-        let chartInstance;
+        let chartInstance1, chartInstance2, chartInstance3;
 
         document.getElementById('crossIsolated').addEventListener('change', function() {
             const walletBalanceDiv = document.getElementById('walletBalanceDiv');
@@ -195,12 +203,16 @@
 
         function resetForm() {
             document.getElementById('calculatorForm').reset();
-            document.getElementById('exitPrice').value = '';
+            document.getElementById('exitPrice1').value = '';
+            document.getElementById('exitPrice2').value = '';
+            document.getElementById('exitPrice3').value = '';
             document.getElementById('result').innerHTML = '';
-            document.getElementById('chart').style.display = 'none';
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
+            document.getElementById('chart1').style.display = 'none';
+            document.getElementById('chart2').style.display = 'none';
+            document.getElementById('chart3').style.display = 'none';
+            if (chartInstance1) chartInstance1.destroy();
+            if (chartInstance2) chartInstance2.destroy();
+            if (chartInstance3) chartInstance3.destroy();
             buyCount = 1;
             document.getElementById('buysContainer').innerHTML = `
                 <div class="buy-entry" id="buyEntry1">
@@ -222,7 +234,9 @@
             const contractType = document.getElementById('contractType').value;
             const crossIsolated = document.getElementById('crossIsolated').value;
             const walletBalance = crossIsolated === 'cross' ? parseFloat(document.getElementById('walletBalance').value) || 0 : 0;
-            const exitPrice = parseFloat(document.getElementById('exitPrice').value);
+            const exitPrice1 = parseFloat(document.getElementById('exitPrice1').value);
+            const exitPrice2 = parseFloat(document.getElementById('exitPrice2').value);
+            const exitPrice3 = parseFloat(document.getElementById('exitPrice3').value);
 
             const maintenanceMarginRate = 0.004; // 0.40%
             let totalPositionCost = 0;
@@ -258,15 +272,37 @@
                 }
             }
 
-            let profit = 0;
-            let gainPercent = 0;
-            if (!isNaN(exitPrice)) {
+            let profit1 = 0, gainPercent1 = 0;
+            let profit2 = 0, gainPercent2 = 0;
+            let profit3 = 0, gainPercent3 = 0;
+
+            if (!isNaN(exitPrice1)) {
                 if (contractType === 'long') {
-                    profit = (exitPrice - averageEntryPrice) * totalPositionCost * leverage / averageEntryPrice;
-                    gainPercent = ((exitPrice - averageEntryPrice) / averageEntryPrice) * 100;
+                    profit1 = (exitPrice1 - averageEntryPrice) * totalPositionCost * leverage / averageEntryPrice;
+                    gainPercent1 = ((exitPrice1 - averageEntryPrice) / averageEntryPrice) * 100;
                 } else {
-                    profit = (averageEntryPrice - exitPrice) * totalPositionCost * leverage / averageEntryPrice;
-                    gainPercent = ((averageEntryPrice - exitPrice) / averageEntryPrice) * 100;
+                    profit1 = (averageEntryPrice - exitPrice1) * totalPositionCost * leverage / averageEntryPrice;
+                    gainPercent1 = ((averageEntryPrice - exitPrice1) / averageEntryPrice) * 100;
+                }
+            }
+
+            if (!isNaN(exitPrice2)) {
+                if (contractType === 'long') {
+                    profit2 = (exitPrice2 - averageEntryPrice) * totalPositionCost * leverage / averageEntryPrice;
+                    gainPercent2 = ((exitPrice2 - averageEntryPrice) / averageEntryPrice) * 100;
+                } else {
+                    profit2 = (averageEntryPrice - exitPrice2) * totalPositionCost * leverage / averageEntryPrice;
+                    gainPercent2 = ((averageEntryPrice - exitPrice2) / averageEntryPrice) * 100;
+                }
+            }
+
+            if (!isNaN(exitPrice3)) {
+                if (contractType === 'long') {
+                    profit3 = (exitPrice3 - averageEntryPrice) * totalPositionCost * leverage / averageEntryPrice;
+                    gainPercent3 = ((exitPrice3 - averageEntryPrice) / averageEntryPrice) * 100;
+                } else {
+                    profit3 = (averageEntryPrice - exitPrice3) * totalPositionCost * leverage / averageEntryPrice;
+                    gainPercent3 = ((averageEntryPrice - exitPrice3) / averageEntryPrice) * 100;
                 }
             }
 
@@ -275,8 +311,9 @@
                     <p>Average Entry Price: ${formatCurrency(averageEntryPrice)}</p>
                     <p>Position Size: ${formatCurrency(totalPositionSize)}</p>
                     <p>Liquidation Price: Never Bust</p>
-                    <p>Profit: ${formatCurrency(profit)}</p>
-                    <p>Gain Percentage: ${gainPercent.toFixed(2)}%</p>
+                    <p>Exit Scenario 1: Profit: ${formatCurrency(profit1)}, Gain Percentage: ${gainPercent1.toFixed(2)}%</p>
+                    <p>Exit Scenario 2: Profit: ${formatCurrency(profit2)}, Gain Percentage: ${gainPercent2.toFixed(2)}%</p>
+                    <p>Exit Scenario 3: Profit: ${formatCurrency(profit3)}, Gain Percentage: ${gainPercent3.toFixed(2)}%</p>
                 `;
             } else {
                 if (contractType === 'long') {
@@ -290,18 +327,21 @@
                     <p>Position Size: ${formatCurrency(totalPositionSize)}</p>
                     <p>Liquidation Price: ${formatCurrency(liquidationPrice)}</p>
                     <p>Liquidation Percent: ${liquidationPercent.toFixed(2)}%</p>
-                    <p>Profit: ${formatCurrency(profit)}</p>
-                    <p>Gain Percentage: ${gainPercent.toFixed(2)}%</p>
+                    <p>Exit Scenario 1: Profit: ${formatCurrency(profit1)}, Gain Percentage: ${gainPercent1.toFixed(2)}%</p>
+                    <p>Exit Scenario 2: Profit: ${formatCurrency(profit2)}, Gain Percentage: ${gainPercent2.toFixed(2)}%</p>
+                    <p>Exit Scenario 3: Profit: ${formatCurrency(profit3)}, Gain Percentage: ${gainPercent3.toFixed(2)}%</p>
                 `;
             }
 
-            // Update the chart
-            updateChart(buyPrices, exitPrice);
+            // Update the charts
+            updateChart('chart1', chartInstance1, buyPrices, exitPrice1);
+            updateChart('chart2', chartInstance2, buyPrices, exitPrice2);
+            updateChart('chart3', chartInstance3, buyPrices, exitPrice3);
         }
 
-        function updateChart(buyPrices, exitPrice) {
-            const ctx = document.getElementById('chart').getContext('2d');
-            document.getElementById('chart').style.display = 'block';
+        function updateChart(chartId, chartInstance, buyPrices, exitPrice) {
+            const ctx = document.getElementById(chartId).getContext('2d');
+            document.getElementById(chartId).style.display = 'block';
             if (chartInstance) {
                 chartInstance.destroy();
             }
