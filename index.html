@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Advanced Liquidation Price Calculator</title>
+    <title>Advanced Crypto Calculator</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -105,62 +105,146 @@
         canvas {
             margin-top: 20px;
         }
+        .toggle-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .toggle-container label {
+            font-size: 18px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        .toggle-button {
+            display: flex;
+            width: calc(100% - 20px);
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .toggle-button label {
+            flex: 1;
+            text-align: center;
+            background-color: #f4f4f9;
+            margin: 0; /* Remove default margin */
+        }
+        .toggle-button input[type="radio"] {
+            display: none;
+        }
+        .toggle-button input[type="radio"]:checked + label {
+            background-color: #ccc;
+            margin: 0; /* Remove default margin */
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="form-container">
-            <h1>Advanced Liquidation Price Calculator</h1>
+            <div class="toggle-container">
+                <div class="toggle-button">
+                    <input type="radio" id="calcMode" name="mode" value="calc" checked onchange="toggleMode()">
+                    <label for="calcMode">Liquidation Calculator</label>
+                    <input type="radio" id="goalSeekMode" name="mode" value="goalSeek" onchange="toggleMode()">
+                    <label for="goalSeekMode">Goal Seek Model</label>
+                </div>
+            </div>
             <form id="calculatorForm">
-                <label for="leverage">Leverage:</label>
-                <input type="number" id="leverage" name="leverage" step="1" min="1" required>
+                <div id="standardInputs">
+                    <h1>Advanced Liquidation Price Calculator</h1>
+                    <label for="leverage">Leverage:</label>
+                    <input type="number" id="leverage" name="leverage" step="1" min="1" required>
 
-                <label for="contractType">Contract Type:</label>
-                <select id="contractType" name="contractType" required>
-                    <option value="long">Long</option>
-                    <option value="short">Short</option>
-                </select>
+                    <label for="contractType">Contract Type:</label>
+                    <select id="contractType" name="contractType" required>
+                        <option value="long">Long</option>
+                        <option value="short">Short</option>
+                    </select>
 
-                <label for="crossIsolated">Cross or Isolated Margin:</label>
-                <select id="crossIsolated" name="crossIsolated" required>
-                    <option value="cross">Cross</option>
-                    <option value="isolated">Isolated</option>
-                </select>
+                    <label for="crossIsolated">Cross or Isolated Margin:</label>
+                    <select id="crossIsolated" name="crossIsolated" required>
+                        <option value="cross">Cross</option>
+                        <option value="isolated">Isolated</option>
+                    </select>
 
-                <div id="walletBalanceDiv">
-                    <label for="walletBalance">Remaining Wallet Balance (in USDT) for Cross Margin:</label>
-                    <input type="number" id="walletBalance" name="walletBalance" step="0.01">
-                </div>
-
-                <div id="buysContainer">
-                    <div class="buy-entry" id="buyEntry1">
-                        <label for="entryPrice1">Entry Price (in USDT):</label>
-                        <input type="number" id="entryPrice1" name="entryPrice1" step="0.01" required>
-
-                        <label for="positionCost1">Position Cost (in USDT):</label>
-                        <input type="number" id="positionCost1" name="positionCost1" step="0.01" required>
+                    <div id="walletBalanceDiv">
+                        <label for="walletBalance">Remaining Wallet Balance (in USDT) for Cross Margin:</label>
+                        <input type="number" id="walletBalance" name="walletBalance" step="0.01">
                     </div>
+
+                    <div id="buysContainer">
+                        <div class="buy-entry" id="buyEntry1">
+                            <label for="entryPrice1">Entry Price (in USDT):</label>
+                            <input type="number" id="entryPrice1" name="entryPrice1" step="0.01" required>
+
+                            <label for="positionCost1">Position Cost (in USDT):</label>
+                            <input type="number" id="positionCost1" name="positionCost1" step="0.01" required>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="addBuyEntry()">Add Another Buy</button>
+                    <button type="button" onclick="calculateLiquidationPrice()">Calculate</button>
                 </div>
 
-                <button type="button" onclick="addBuyEntry()">Add Another Buy</button>
-                <button type="button" onclick="calculateLiquidationPrice()">Calculate</button>
+                <div id="goalSeekInputs" style="display:none;">
+                    <h1>Goal Seek Model</h1>
+                    <label for="totalInvestment">Total Investment (in USDT):</label>
+                    <input type="number" id="totalInvestment" name="totalInvestment" step="0.01" required>
+
+                    <label for="desiredLeverage">Desired Leverage:</label>
+                    <input type="number" id="desiredLeverage" name="desiredLeverage" step="1" min="1" required>
+
+                    <label for="contractTypeGoal">Contract Type:</label>
+                    <select id="contractTypeGoal" name="contractTypeGoal" required>
+                        <option value="long">Long</option>
+                        <option value="short">Short</option>
+                    </select>
+
+                    <label for="crossIsolatedGoal">Cross or Isolated Margin:</label>
+                    <select id="crossIsolatedGoal" name="crossIsolatedGoal" required>
+                        <option value="cross">Cross</option>
+                        <option value="isolated">Isolated</option>
+                    </select>
+
+                    <div id="walletBalanceDivGoal">
+                        <label for="walletBalanceGoal">Remaining Wallet Balance (in USDT) for Cross Margin:</label>
+                        <input type="number" id="walletBalanceGoal" name="walletBalanceGoal" step="0.01">
+                    </div>
+
+                    <label for="exitPrice1">Exit Price Scenario 1 (in USDT):</label>
+                    <input type="number" id="exitPrice1" name="exitPrice1" step="0.01" required>
+
+                    <label for="exitPrice2">Exit Price Scenario 2 (in USDT):</label>
+                    <input type="number" id="exitPrice2" name="exitPrice2" step="0.01" required>
+
+                    <label for="exitPrice3">Exit Price Scenario 3 (in USDT):</label>
+                    <input type="number" id="exitPrice3" name="exitPrice3" step="0.01" required>
+
+                    <label for="profitTarget">Desired Profit (in USDT):</label>
+                    <input type="number" id="profitTarget" name="profitTarget" step="0.01" required>
+
+                    <button type="button" onclick="goalSeek()">Calculate Goal Seek</button>
+                </div>
+
                 <button type="button" class="reset-button" onclick="resetForm()">Reset</button>
             </form>
         </div>
         <div class="result-container">
-            <label for="exitPrice1">Exit Price Scenario 1 (in USDT):</label>
-            <input type="number" id="exitPrice1" name="exitPrice1" step="0.01">
+            <div id="standardResults">
+                <label for="exitPrice">Exit Price (in USDT):</label>
+                <input type="number" id="exitPrice" name="exitPrice" step="0.01">
 
-            <label for="exitPrice2">Exit Price Scenario 2 (in USDT):</label>
-            <input type="number" id="exitPrice2" name="exitPrice2" step="0.01">
+                <div id="result" class="result"></div>
+                <canvas id="chart1"></canvas>
+                <canvas id="chart2"></canvas>
+                <canvas id="chart3"></canvas>
+            </div>
 
-            <label for="exitPrice3">Exit Price Scenario 3 (in USDT):</label>
-            <input type="number" id="exitPrice3" name="exitPrice3" step="0.01">
-
-            <div id="result" class="result"></div>
-            <canvas id="chart1"></canvas>
-            <canvas id="chart2"></canvas>
-            <canvas id="chart3"></canvas>
+            <div id="goalSeekResults" style="display:none;">
+                <div id="goalSeekResult" class="result"></div>
+                <canvas id="goalSeekChart1"></canvas>
+                <canvas id="goalSeekChart2"></canvas>
+                <canvas id="goalSeekChart3"></canvas>
+            </div>
         </div>
     </div>
 
@@ -168,6 +252,7 @@
     <script>
         let buyCount = 1;
         let chartInstance1, chartInstance2, chartInstance3;
+        let goalSeekChart1, goalSeekChart2, goalSeekChart3;
 
         document.getElementById('crossIsolated').addEventListener('change', function() {
             const walletBalanceDiv = document.getElementById('walletBalanceDiv');
@@ -175,6 +260,15 @@
                 walletBalanceDiv.style.display = 'block';
             } else {
                 walletBalanceDiv.style.display = 'none';
+            }
+        });
+
+        document.getElementById('crossIsolatedGoal').addEventListener('change', function() {
+            const walletBalanceDivGoal = document.getElementById('walletBalanceDivGoal');
+            if (this.value === 'cross') {
+                walletBalanceDivGoal.style.display = 'block';
+            } else {
+                walletBalanceDivGoal.style.display = 'none';
             }
         });
 
@@ -207,12 +301,19 @@
             document.getElementById('exitPrice2').value = '';
             document.getElementById('exitPrice3').value = '';
             document.getElementById('result').innerHTML = '';
+            document.getElementById('goalSeekResult').innerHTML = '';
             document.getElementById('chart1').style.display = 'none';
             document.getElementById('chart2').style.display = 'none';
             document.getElementById('chart3').style.display = 'none';
+            document.getElementById('goalSeekChart1').style.display = 'none';
+            document.getElementById('goalSeekChart2').style.display = 'none';
+            document.getElementById('goalSeekChart3').style.display = 'none';
             if (chartInstance1) chartInstance1.destroy();
             if (chartInstance2) chartInstance2.destroy();
             if (chartInstance3) chartInstance3.destroy();
+            if (goalSeekChart1) goalSeekChart1.destroy();
+            if (goalSeekChart2) goalSeekChart2.destroy();
+            if (goalSeekChart3) goalSeekChart3.destroy();
             buyCount = 1;
             document.getElementById('buysContainer').innerHTML = `
                 <div class="buy-entry" id="buyEntry1">
@@ -227,6 +328,14 @@
 
         function formatCurrency(value) {
             return `$${value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}`;
+        }
+
+        function toggleMode() {
+            const isGoalSeek = document.getElementById('goalSeekMode').checked;
+            document.getElementById('standardInputs').style.display = isGoalSeek ? 'none' : 'block';
+            document.getElementById('standardResults').style.display = isGoalSeek ? 'none' : 'block';
+            document.getElementById('goalSeekInputs').style.display = isGoalSeek ? 'block' : 'none';
+            document.getElementById('goalSeekResults').style.display = isGoalSeek ? 'block' : 'none';
         }
 
         function calculateLiquidationPrice() {
@@ -365,6 +474,90 @@
                     }
                 }
             });
+        }
+
+        function goalSeek() {
+            const totalInvestment = parseFloat(document.getElementById('totalInvestment').value);
+            const desiredLeverage = parseFloat(document.getElementById('desiredLeverage').value);
+            const exitPrice1 = parseFloat(document.getElementById('exitPrice1').value);
+            const exitPrice2 = parseFloat(document.getElementById('exitPrice2').value);
+            const exitPrice3 = parseFloat(document.getElementById('exitPrice3').value);
+            const profitTarget = parseFloat(document.getElementById('profitTarget').value);
+            const contractType = document.getElementById('contractTypeGoal').value;
+            const crossIsolated = document.getElementById('crossIsolatedGoal').value;
+            const walletBalance = crossIsolated === 'cross' ? parseFloat(document.getElementById('walletBalanceGoal').value) || 0 : 0;
+
+            const maintenanceMarginRate = 0.004; // 0.40%
+
+            // Calculate entry prices for each scenario
+            function calculateEntryPrice(exitPrice, totalInvestment, profitTarget, leverage) {
+                const positionSize = totalInvestment * leverage;
+                const requiredAppreciation = profitTarget / positionSize;
+                return exitPrice / (1 + requiredAppreciation);
+            }
+
+            const entryPrice1 = calculateEntryPrice(exitPrice1, totalInvestment, profitTarget, desiredLeverage);
+            const entryPrice2 = calculateEntryPrice(exitPrice2, totalInvestment, profitTarget, desiredLeverage);
+            const entryPrice3 = calculateEntryPrice(exitPrice3, totalInvestment, profitTarget, desiredLeverage);
+
+            const totalPositionSize = totalInvestment * desiredLeverage;
+
+            // Calculate liquidation prices for each scenario
+            function calculateLiquidationPrice(entryPrice, totalPositionSize, leverage, contractType, maintenanceMarginRate, walletBalance, crossIsolated) {
+                let liquidationPrice;
+                if (crossIsolated === 'cross') {
+                    const totalCollateral = totalPositionSize + walletBalance;
+                    if (contractType === 'long') {
+                        liquidationPrice = entryPrice * (1 - (1 / leverage) * (totalCollateral / totalPositionSize) + maintenanceMarginRate);
+                    } else {
+                        liquidationPrice = entryPrice * (1 + (1 / leverage) * (totalCollateral / totalPositionSize) - maintenanceMarginRate);
+                    }
+                } else {
+                    if (contractType === 'long') {
+                        liquidationPrice = entryPrice * (1 - (1 / leverage) + maintenanceMarginRate);
+                    } else {
+                        liquidationPrice = entryPrice * (1 + (1 / leverage) - maintenanceMarginRate);
+                    }
+                }
+                return liquidationPrice;
+            }
+
+            const liquidationPrice1 = calculateLiquidationPrice(entryPrice1, totalPositionSize, desiredLeverage, contractType, maintenanceMarginRate, walletBalance, crossIsolated);
+            const liquidationPrice2 = calculateLiquidationPrice(entryPrice2, totalPositionSize, desiredLeverage, contractType, maintenanceMarginRate, walletBalance, crossIsolated);
+            const liquidationPrice3 = calculateLiquidationPrice(entryPrice3, totalPositionSize, desiredLeverage, contractType, maintenanceMarginRate, walletBalance, crossIsolated);
+
+            // Calculate profits and gain percentages for each scenario
+            let profit1 = profitTarget;
+            let gainPercent1 = (profit1 / totalInvestment) * 100;
+
+            let profit2 = profitTarget;
+            let gainPercent2 = (profit2 / totalInvestment) * 100;
+
+            let profit3 = profitTarget;
+            let gainPercent3 = (profit3 / totalInvestment) * 100;
+
+            document.getElementById('goalSeekResult').innerHTML = `
+                <p>Scenario 1:</p>
+                <p>Average Entry Price: ${formatCurrency(entryPrice1)}</p>
+                <p>Position Size: ${formatCurrency(totalPositionSize)}</p>
+                <p>Liquidation Price: ${formatCurrency(liquidationPrice1)}</p>
+                <p>Profit: ${formatCurrency(profit1)}, Gain Percentage: ${gainPercent1.toFixed(2)}%</p>
+                <p>Scenario 2:</p>
+                <p>Average Entry Price: ${formatCurrency(entryPrice2)}</p>
+                <p>Position Size: ${formatCurrency(totalPositionSize)}</p>
+                <p>Liquidation Price: ${formatCurrency(liquidationPrice2)}</p>
+                <p>Profit: ${formatCurrency(profit2)}, Gain Percentage: ${gainPercent2.toFixed(2)}%</p>
+                <p>Scenario 3:</p>
+                <p>Average Entry Price: ${formatCurrency(entryPrice3)}</p>
+                <p>Position Size: ${formatCurrency(totalPositionSize)}</p>
+                <p>Liquidation Price: ${formatCurrency(liquidationPrice3)}</p>
+                <p>Profit: ${formatCurrency(profit3)}, Gain Percentage: ${gainPercent3.toFixed(2)}%</p>
+            `;
+
+            // Update the charts
+            updateChart('goalSeekChart1', goalSeekChart1, [entryPrice1], exitPrice1);
+            updateChart('goalSeekChart2', goalSeekChart2, [entryPrice2], exitPrice2);
+            updateChart('goalSeekChart3', goalSeekChart3, [entryPrice3], exitPrice3);
         }
     </script>
 </body>
