@@ -110,11 +110,6 @@
             justify-content: center;
             margin-bottom: 20px;
         }
-        .toggle-container label {
-            font-size: 18px;
-            padding: 10px 20px;
-            cursor: pointer;
-        }
         .toggle-button {
             display: flex;
             width: calc(100% - 20px);
@@ -126,14 +121,16 @@
             flex: 1;
             text-align: center;
             background-color: #f4f4f9;
-            margin: 0; /* Remove default margin */
+            padding: 10px 0;
+            cursor: pointer;
+            margin: 0;
         }
         .toggle-button input[type="radio"] {
             display: none;
         }
         .toggle-button input[type="radio"]:checked + label {
             background-color: #ccc;
-            margin: 0; /* Remove default margin */
+            margin: 0;
         }
     </style>
 </head>
@@ -170,6 +167,15 @@
                         <label for="walletBalance">Remaining Wallet Balance (in USDT) for Cross Margin:</label>
                         <input type="number" id="walletBalance" name="walletBalance" step="0.01">
                     </div>
+
+                    <label for="exitPrice1">Exit Price Scenario 1 (in USDT):</label>
+                    <input type="number" id="exitPrice1" name="exitPrice1" step="0.01">
+
+                    <label for="exitPrice2">Exit Price Scenario 2 (in USDT):</label>
+                    <input type="number" id="exitPrice2" name="exitPrice2" step="0.01">
+
+                    <label for="exitPrice3">Exit Price Scenario 3 (in USDT):</label>
+                    <input type="number" id="exitPrice3" name="exitPrice3" step="0.01">
 
                     <div id="buysContainer">
                         <div class="buy-entry" id="buyEntry1">
@@ -210,14 +216,14 @@
                         <input type="number" id="walletBalanceGoal" name="walletBalanceGoal" step="0.01">
                     </div>
 
-                    <label for="exitPrice1">Exit Price Scenario 1 (in USDT):</label>
-                    <input type="number" id="exitPrice1" name="exitPrice1" step="0.01" required>
+                    <label for="exitPrice1Goal">Exit Price Scenario 1 (in USDT):</label>
+                    <input type="number" id="exitPrice1Goal" name="exitPrice1Goal" step="0.01" required>
 
-                    <label for="exitPrice2">Exit Price Scenario 2 (in USDT):</label>
-                    <input type="number" id="exitPrice2" name="exitPrice2" step="0.01" required>
+                    <label for="exitPrice2Goal">Exit Price Scenario 2 (in USDT):</label>
+                    <input type="number" id="exitPrice2Goal" name="exitPrice2Goal" step="0.01" required>
 
-                    <label for="exitPrice3">Exit Price Scenario 3 (in USDT):</label>
-                    <input type="number" id="exitPrice3" name="exitPrice3" step="0.01" required>
+                    <label for="exitPrice3Goal">Exit Price Scenario 3 (in USDT):</label>
+                    <input type="number" id="exitPrice3Goal" name="exitPrice3Goal" step="0.01" required>
 
                     <label for="profitTarget">Desired Profit (in USDT):</label>
                     <input type="number" id="profitTarget" name="profitTarget" step="0.01" required>
@@ -230,9 +236,6 @@
         </div>
         <div class="result-container">
             <div id="standardResults">
-                <label for="exitPrice">Exit Price (in USDT):</label>
-                <input type="number" id="exitPrice" name="exitPrice" step="0.01">
-
                 <div id="result" class="result"></div>
                 <canvas id="chart1"></canvas>
                 <canvas id="chart2"></canvas>
@@ -300,6 +303,9 @@
             document.getElementById('exitPrice1').value = '';
             document.getElementById('exitPrice2').value = '';
             document.getElementById('exitPrice3').value = '';
+            document.getElementById('exitPrice1Goal').value = '';
+            document.getElementById('exitPrice2Goal').value = '';
+            document.getElementById('exitPrice3Goal').value = '';
             document.getElementById('result').innerHTML = '';
             document.getElementById('goalSeekResult').innerHTML = '';
             document.getElementById('chart1').style.display = 'none';
@@ -415,11 +421,12 @@
                 }
             }
 
+            let liquidationPriceText = liquidationPrice < 0 ? "Never Bust" : formatCurrency(liquidationPrice);
             if (liquidationPrice < 0) {
                 document.getElementById('result').innerHTML = `
                     <p>Average Entry Price: ${formatCurrency(averageEntryPrice)}</p>
                     <p>Position Size: ${formatCurrency(totalPositionSize)}</p>
-                    <p>Liquidation Price: Never Bust</p>
+                    <p>Liquidation Price: ${liquidationPriceText}</p>
                     <p>Exit Scenario 1: Profit: ${formatCurrency(profit1)}, Gain Percentage: ${gainPercent1.toFixed(2)}%</p>
                     <p>Exit Scenario 2: Profit: ${formatCurrency(profit2)}, Gain Percentage: ${gainPercent2.toFixed(2)}%</p>
                     <p>Exit Scenario 3: Profit: ${formatCurrency(profit3)}, Gain Percentage: ${gainPercent3.toFixed(2)}%</p>
@@ -434,7 +441,7 @@
                 document.getElementById('result').innerHTML = `
                     <p>Average Entry Price: ${formatCurrency(averageEntryPrice)}</p>
                     <p>Position Size: ${formatCurrency(totalPositionSize)}</p>
-                    <p>Liquidation Price: ${formatCurrency(liquidationPrice)}</p>
+                    <p>Liquidation Price: ${liquidationPriceText}</p>
                     <p>Liquidation Percent: ${liquidationPercent.toFixed(2)}%</p>
                     <p>Exit Scenario 1: Profit: ${formatCurrency(profit1)}, Gain Percentage: ${gainPercent1.toFixed(2)}%</p>
                     <p>Exit Scenario 2: Profit: ${formatCurrency(profit2)}, Gain Percentage: ${gainPercent2.toFixed(2)}%</p>
@@ -479,9 +486,9 @@
         function goalSeek() {
             const totalInvestment = parseFloat(document.getElementById('totalInvestment').value);
             const desiredLeverage = parseFloat(document.getElementById('desiredLeverage').value);
-            const exitPrice1 = parseFloat(document.getElementById('exitPrice1').value);
-            const exitPrice2 = parseFloat(document.getElementById('exitPrice2').value);
-            const exitPrice3 = parseFloat(document.getElementById('exitPrice3').value);
+            const exitPrice1 = parseFloat(document.getElementById('exitPrice1Goal').value);
+            const exitPrice2 = parseFloat(document.getElementById('exitPrice2Goal').value);
+            const exitPrice3 = parseFloat(document.getElementById('exitPrice3Goal').value);
             const profitTarget = parseFloat(document.getElementById('profitTarget').value);
             const contractType = document.getElementById('contractTypeGoal').value;
             const crossIsolated = document.getElementById('crossIsolatedGoal').value;
@@ -536,21 +543,25 @@
             let profit3 = profitTarget;
             let gainPercent3 = (profit3 / totalInvestment) * 100;
 
+            const liquidationPrice1Text = liquidationPrice1 < 0 ? "Never Bust" : formatCurrency(liquidationPrice1);
+            const liquidationPrice2Text = liquidationPrice2 < 0 ? "Never Bust" : formatCurrency(liquidationPrice2);
+            const liquidationPrice3Text = liquidationPrice3 < 0 ? "Never Bust" : formatCurrency(liquidationPrice3);
+
             document.getElementById('goalSeekResult').innerHTML = `
                 <p>Scenario 1:</p>
                 <p>Average Entry Price: ${formatCurrency(entryPrice1)}</p>
                 <p>Position Size: ${formatCurrency(totalPositionSize)}</p>
-                <p>Liquidation Price: ${formatCurrency(liquidationPrice1)}</p>
+                <p>Liquidation Price: ${liquidationPrice1Text}</p>
                 <p>Profit: ${formatCurrency(profit1)}, Gain Percentage: ${gainPercent1.toFixed(2)}%</p>
                 <p>Scenario 2:</p>
                 <p>Average Entry Price: ${formatCurrency(entryPrice2)}</p>
                 <p>Position Size: ${formatCurrency(totalPositionSize)}</p>
-                <p>Liquidation Price: ${formatCurrency(liquidationPrice2)}</p>
+                <p>Liquidation Price: ${liquidationPrice2Text}</p>
                 <p>Profit: ${formatCurrency(profit2)}, Gain Percentage: ${gainPercent2.toFixed(2)}%</p>
                 <p>Scenario 3:</p>
                 <p>Average Entry Price: ${formatCurrency(entryPrice3)}</p>
                 <p>Position Size: ${formatCurrency(totalPositionSize)}</p>
-                <p>Liquidation Price: ${formatCurrency(liquidationPrice3)}</p>
+                <p>Liquidation Price: ${liquidationPrice3Text}</p>
                 <p>Profit: ${formatCurrency(profit3)}, Gain Percentage: ${gainPercent3.toFixed(2)}%</p>
             `;
 
