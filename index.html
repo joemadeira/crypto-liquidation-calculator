@@ -446,6 +446,7 @@
                     <p>Exit Scenario 2: Profit: ${formatCurrency(profit2)}, Gain Percentage: ${gainPercent2.toFixed(2)}%</p>
                     <p>Exit Scenario 3: Profit: ${formatCurrency(profit3)}, Gain Percentage: ${gainPercent3.toFixed(2)}%</p>
                     <p>Funding Rate Fee: ${formatCurrency(fundingFee)}</p>
+                    <p>Note: Exit scenarios assume you've held your leverage trade for 12 months and funding rates have stayed at 0.01% every 8 hours.</p>
                 `;
             } else {
                 if (contractType === 'long') {
@@ -463,6 +464,7 @@
                     <p>Exit Scenario 2: Profit: ${formatCurrency(profit2)}, Gain Percentage: ${gainPercent2.toFixed(2)}%</p>
                     <p>Exit Scenario 3: Profit: ${formatCurrency(profit3)}, Gain Percentage: ${gainPercent3.toFixed(2)}%</p>
                     <p>Funding Rate Fee: ${formatCurrency(fundingFee)}</p>
+                    <p>Note: Exit scenarios assume you've held your leverage trade for 12 months and funding rates have stayed at 0.01% every 8 hours.</p>
                 `;
             }
 
@@ -580,6 +582,7 @@
                 <p>Position Size: ${formatCurrency(totalPositionSize)}</p>
                 <p>Liquidation Price: ${liquidationPrice3Text}</p>
                 <p>Profit: ${formatCurrency(profit3)}, Gain Percentage: ${gainPercent3.toFixed(2)}%</p>
+                <p>Note: Exit scenarios assume you've held your leverage trade for 12 months and funding rates have stayed at 0.01% every 8 hours.</p>
             `;
 
             // Update the charts
