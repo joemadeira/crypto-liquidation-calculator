@@ -344,6 +344,13 @@
             document.getElementById('goalSeekResults').style.display = isGoalSeek ? 'block' : 'none';
         }
 
+        function calculateFundingFee(positionSize) {
+            const fundingRate = 0.0001; // 0.01% per 8 hours
+            const periodsPerYear = 365 * 3; // 3 periods per day, 365 days in a year
+            const totalFundingFee = positionSize * fundingRate * periodsPerYear;
+            return totalFundingFee;
+        }
+
         function calculateLiquidationPrice() {
             const leverage = parseFloat(document.getElementById('leverage').value);
             const contractType = document.getElementById('contractType').value;
@@ -421,6 +428,14 @@
                 }
             }
 
+            // Calculate the total funding fee for the position
+            const fundingFee = calculateFundingFee(totalPositionSize);
+
+            // Subtract the funding fee from the profits
+            profit1 -= fundingFee;
+            profit2 -= fundingFee;
+            profit3 -= fundingFee;
+
             let liquidationPriceText = liquidationPrice < 0 ? "Never Bust" : formatCurrency(liquidationPrice);
             if (liquidationPrice < 0) {
                 document.getElementById('result').innerHTML = `
@@ -430,6 +445,7 @@
                     <p>Exit Scenario 1: Profit: ${formatCurrency(profit1)}, Gain Percentage: ${gainPercent1.toFixed(2)}%</p>
                     <p>Exit Scenario 2: Profit: ${formatCurrency(profit2)}, Gain Percentage: ${gainPercent2.toFixed(2)}%</p>
                     <p>Exit Scenario 3: Profit: ${formatCurrency(profit3)}, Gain Percentage: ${gainPercent3.toFixed(2)}%</p>
+                    <p>Funding Rate Fee: ${formatCurrency(fundingFee)}</p>
                 `;
             } else {
                 if (contractType === 'long') {
@@ -446,6 +462,7 @@
                     <p>Exit Scenario 1: Profit: ${formatCurrency(profit1)}, Gain Percentage: ${gainPercent1.toFixed(2)}%</p>
                     <p>Exit Scenario 2: Profit: ${formatCurrency(profit2)}, Gain Percentage: ${gainPercent2.toFixed(2)}%</p>
                     <p>Exit Scenario 3: Profit: ${formatCurrency(profit3)}, Gain Percentage: ${gainPercent3.toFixed(2)}%</p>
+                    <p>Funding Rate Fee: ${formatCurrency(fundingFee)}</p>
                 `;
             }
 
